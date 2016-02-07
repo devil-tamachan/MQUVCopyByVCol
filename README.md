@@ -1,0 +1,2 @@
+# MQUVCopyByVCol
+ZBrushのInsertMeshブラシで作ったメッシュにUVを転写するメタセコプラグイン
