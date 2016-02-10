@@ -78,6 +78,7 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)64</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -220,7 +221,7 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy /b x64\Debug\MQUVCopyByVCol.dll "$(APPDATA)\tetraface\Metasequoia4_x64\Plugins\Object\"</Command>
+      <Command>copy /b x64\Debug\MQUVCopyByVCol64.dll "$(APPDATA)\tetraface\Metasequoia4_x64\Plugins\Object\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

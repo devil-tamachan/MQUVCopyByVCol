@@ -226,7 +226,7 @@ int SortVColUV(BYTE *pVColUVs)
   if(minIdx>0)SortUVs(pVColUVs, numV, minIdx);
   return minIdx;
 }
-/*
+
 void DbgVColUVs(BYTE *p)
 {
   CString s;
@@ -239,7 +239,7 @@ void DbgVCols(BYTE *p)
   s.Format("%02X%02X%02X %02X%02X%02X %02X%02X%02X %02X%02X%02X %02X", p[0],p[1],p[2], p[3],p[4],p[5], p[6],p[7],p[8], p[9],p[10],p[11],    p[12]);
   OutputDebugString(s);
 }
-*/
+
 DWORD ReadVColUVs(MQObject oBrush, BYTE *pVColUVs)
 {
   DWORD numSet = 0;
@@ -297,14 +297,14 @@ DWORD ReadVColUVs(MQObject oBrush, BYTE *pVColUVs)
     fclose(fp);
   }*/
   qsort(pVColUVs, numSet, g_VColUVs_OneSetSize, compare_VCols);
-    //OutputDebugString("++++++++++++++++++++++Sorted src2");
+  //  OutputDebugString("++++++++++++++++++++++Sorted src2");
   /*pCur = pVColUVs;
   for(int i=0;i<numSet;i++)
   {
     DbgVColUVs(pCur);
     pCur+=g_VColUVs_OneSetSize;
   }*/
-    //OutputDebugString("----------------------Sorted src2");
+  //  OutputDebugString("----------------------Sorted src2");
   return numSet;
 }
 
@@ -347,12 +347,15 @@ BOOL MQUVCopyByVColPlugin::MQUVCopyByVCol(MQDocument doc)
   for(int i=0;i<numObj;i++)
   {
     MQObject o = doc->GetObject(i);
-    CString objName;
-    o->GetName(objName.GetBufferSetLength(151), 150);
-    objName.ReleaseBuffer();
-    if(objName==_T("brush"))oBrush = o;
-    else {
-      targetObjArr.Add(o);
+    if(o!=NULL)
+    {
+      CString objName;
+      o->GetName(objName.GetBufferSetLength(151), 150);
+      objName.ReleaseBuffer();
+      if(objName==_T("brush"))oBrush = o;
+      else {
+        targetObjArr.Add(o);
+      }
     }
   }
   
@@ -398,15 +401,16 @@ BOOL MQUVCopyByVColPlugin::MQUVCopyByVCol(MQDocument doc)
       {
         *((DWORD*)(vcols+3*j)) = o->GetFaceVertexColor(fi, j);
       }
+      if(numV==3)vcols[9]=0;
       vcols[12] = numV==3?1:0;
-      //OutputDebugString("-------------\n");
+    //  OutputDebugString("-------------\n");
     //DbgVCols(vcols);
       int minIdx = SortVCols(vcols, numV);
     //DbgVCols(vcols);
       int idx = SearchVCols(pVColUVs, numSetSrc, vcols);
-    //DbgVColUVs(pVColUVs+idx*g_VColUVs_OneSetSize);
       if(idx>=0)
       {
+    //DbgVColUVs(pVColUVs+idx*g_VColUVs_OneSetSize);
         SetUVs(o, fi, pVColUVs, idx, minIdx);
       } else OutputDebugString("ERR: vcol not found\n");
     }
