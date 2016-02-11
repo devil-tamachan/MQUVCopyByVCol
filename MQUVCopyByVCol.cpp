@@ -140,16 +140,12 @@ BOOL MQUVCopyByVColPlugin::Execute(int index, MQDocument doc)
 
 int compare_VCols(const void *a, const void *b)
 {
-  const BYTE *p1 = (const BYTE*)a;
-  const BYTE *p2 = (const BYTE*)b;
-  for(int i=0;i<13/*rgb*4+fTri*/;i++)
-  {
-    if(*p1<*p2)return -1;
-    else if(*p1>*p2)return 1;
-    p1++;
-    p2++;
-  }
-  return 0;
+  return memcmp(a, b, 13/*rgb*4+fTri*/);
+}
+
+int compare_VCol1(const void *a, const void *b)
+{
+  return memcmp(a, b, 3/*rgb*/);
 }
 
 static const DWORD g_VColUVs_OneSetSize = 3/*RGB*/*4/*角形*/+1/*fTri*/ + sizeof(MQCoordinate)*4/*角形*/;
@@ -168,17 +164,6 @@ int SearchVCols(BYTE *pVColUVs, DWORD numSet, BYTE *vcols)
 	if (compare_VCols((const void*)(pVColUVs + g_VColUVs_OneSetSize * left), vcols) == 0) return left;
 	return -1;
 }
-
-int SearchMinVColIdx(BYTE *vcols, int numV)
-{
-  int minIdx=0;
-  for(int i=1;i<numV;i++)
-  {
-    if(compare_VCols(vcols+i*3, vcols+minIdx*3)<0)minIdx=i;
-  }
-  return minIdx;
-}
-
 void rotateL(BYTE *arr, int unitSize, int numUnit, int shift)
 {
   if(shift>=numUnit)shift%=numUnit;
@@ -208,6 +193,45 @@ void rotateR(BYTE *arr, int unitSize, int numUnit, int shift)
   int lshift = numUnit-shift;
   rotateL(arr, unitSize, numUnit, lshift);
 }
+
+int SearchMinVColIdx(BYTE *vcols, int numV)
+{
+  int minIdx=0;
+  int minCnt=0;
+  for(int i=1;i<numV;i++)
+  {
+    int result = compare_VCol1(vcols+i*3, vcols+minIdx*3);
+    if(result<0)
+    {
+      minIdx=i;
+      minCnt=1;
+    } else if(result==0)
+    {
+      minCnt++;
+    }
+  }
+  if(minCnt>1)
+  {
+    int unitSize = 3*numV;
+    BYTE *vcolsArr = (BYTE*)malloc(unitSize*numV);
+    memcpy(vcolsArr, vcols, unitSize);
+    for(int i=1;i<numV;i++)
+    {
+      BYTE *dst = vcolsArr+unitSize*i;
+      memcpy(dst, vcols, unitSize);
+      rotateL(dst, 3, numV, i+1);
+    }
+    minIdx=0;
+    for(int i=1;i<numV;i++)
+    {
+      int result = memcmp(vcols+i*unitSize, vcols+minIdx*unitSize, unitSize);
+      if(result<0)minIdx=i;
+    }
+    free(vcolsArr);
+  }
+  return minIdx;
+}
+
 int SortVCols(BYTE *vcols, int numV)
 {
   int minIdx = SearchMinVColIdx(vcols, numV);
@@ -297,14 +321,14 @@ DWORD ReadVColUVs(MQObject oBrush, BYTE *pVColUVs)
     fclose(fp);
   }*/
   qsort(pVColUVs, numSet, g_VColUVs_OneSetSize, compare_VCols);
-  //  OutputDebugString("++++++++++++++++++++++Sorted src2");
-  /*pCur = pVColUVs;
+    OutputDebugString("++++++++++++++++++++++Sorted src2");
+  pCur = pVColUVs;
   for(int i=0;i<numSet;i++)
   {
     DbgVColUVs(pCur);
     pCur+=g_VColUVs_OneSetSize;
-  }*/
-  //  OutputDebugString("----------------------Sorted src2");
+  }
+    OutputDebugString("----------------------Sorted src2");
   return numSet;
 }
 
@@ -403,14 +427,14 @@ BOOL MQUVCopyByVColPlugin::MQUVCopyByVCol(MQDocument doc)
       }
       if(numV==3)vcols[9]=0;
       vcols[12] = numV==3?1:0;
-    //  OutputDebugString("-------------\n");
-    //DbgVCols(vcols);
+      OutputDebugString("-------------\n");
+    DbgVCols(vcols);
       int minIdx = SortVCols(vcols, numV);
-    //DbgVCols(vcols);
+    DbgVCols(vcols);
       int idx = SearchVCols(pVColUVs, numSetSrc, vcols);
       if(idx>=0)
       {
-    //DbgVColUVs(pVColUVs+idx*g_VColUVs_OneSetSize);
+    DbgVColUVs(pVColUVs+idx*g_VColUVs_OneSetSize);
         SetUVs(o, fi, pVColUVs, idx, minIdx);
       } else OutputDebugString("ERR: vcol not found\n");
     }
